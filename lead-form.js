@@ -1,38 +1,38 @@
-$(window).on('load', function () {
-    let now = new Date();
-    console.log('LEAD FORM LOAD start @' + now.getSeconds() + "." + now.getMilliseconds() + "\n\n");
-    let queryString = window.location.search;
-    console.log(queryString);
-    let params = new URLSearchParams(queryString);
-    console.log(params);
+// $(window).on('load', function () {
+//     let now = new Date();
+//     console.log('LEAD FORM LOAD start @' + now.getSeconds() + "." + now.getMilliseconds() + "\n\n");
+//     let queryString = window.location.search;
+//     console.log(queryString);
+//     let params = new URLSearchParams(queryString);
+//     console.log(params);
 
-    // NOTE that there should be no "address" for buyers (maybe just sellers initially)
-    let address = params.get("address");
-    console.log('Here is the address: ' + address);
+//     // NOTE that there should be no "address" for buyers (maybe just sellers initially)
+//     let address = params.get("address");
+//     console.log('Here is the address: ' + address);
 
-    // UPDATE ADDRESS DISPLAY AND STORAGE FIELDS
-    $(".address-display").html(address);
-    $("#address-storage").attr("value", address); // NOTE - consider removing    
+//     // UPDATE ADDRESS DISPLAY AND STORAGE FIELDS
+//     $(".address-display").html(address);
+//     $("#address-storage").attr("value", address); // NOTE - consider removing    
 
-    // IT'S possible that we should query with the source site name here to ensure safety
-    let destination = "fgtaJ8fmDtv54zAyJkrfVxM4df"; // JON KUTSMEDA
-    $("#destination-storage").attr("value", destination);
-    $("#agent-id-storage").attr("value", destination);
+//     // IT'S possible that we should query with the source site name here to ensure safety
+//     let destination = "fgtaJ8fmDtv54zAyJkrfVxM4df"; // JON KUTSMEDA
+//     $("#destination-storage").attr("value", destination);
+//     $("#agent-id-storage").attr("value", destination);
 
-    // HIDE UNUSED LOADERS
-    $("#market-analysis-loader").show();
-    // $('#updating-home-details-loader').removeClass('hide');
-    $('#updating-home-details-loader').hide();
-    $('#validating-location-loader').hide();
+//     // HIDE UNUSED LOADERS
+//     $("#market-analysis-loader").show();
+//     // $('#updating-home-details-loader').removeClass('hide');
+//     $('#updating-home-details-loader').hide();
+//     $('#validating-location-loader').hide();
 
-    $("#property-info-page").show();
-    $("#relationship-page").show();
-    let request = { "address": address, "validateCity": false, "agentId": agentId, "startSession": true };
-    validateAddress(request, proceedAfterAddressValidated); // THIS may be for both seller and seller-buyer, but the logic will eventually deviate based on type
+//     $("#property-info-page").show();
+//     $("#relationship-page").show();
+//     let request = { "address": address, "validateCity": false, "agentId": agentId, "startSession": true };
+//     validateAddress(request, proceedAfterAddressValidated); // THIS may be for both seller and seller-buyer, but the logic will eventually deviate based on type
 
-    // history.replaceState({}, null, "agents"); // UNCOMMENT TO HIDE QUERY STRING
-    setTimeout(function () { $("#market-analysis-loader").hide(); }, 1500); // UNCOMMENT TO SHOW INITIAL LOADER
-});
+//     // history.replaceState({}, null, "agents"); // UNCOMMENT TO HIDE QUERY STRING
+//     setTimeout(function () { $("#market-analysis-loader").hide(); }, 1500); // UNCOMMENT TO SHOW INITIAL LOADER
+// });
 
 function proceedAfterAddressValidated(result) {
     console.log('In proceedAfterAddressValidated...');
