@@ -1,0 +1,252 @@
+<script type="text/javascript"
+    src="https://cdn.jsdelivr.net/gh/mistiansen/Agent-Fixup-Scripts@ffe8364/validate-city.js">
+</script>
+
+<script type="text/javascript"
+    src="https://cdn.jsdelivr.net/gh/mistiansen/Agent-Fixup-Scripts@a277841/generic-lead-form.js">
+</script>
+
+<script type="text/javascript"
+    src="https://cdn.jsdelivr.net/gh/mistiansen/Agent-Fixup-Scripts@c89c5d6/validate-address.js">
+</script>
+
+<script type="text/javascript"
+    src="https://cdn.jsdelivr.net/gh/mistiansen/Agent-Fixup-Scripts@d40506a/property-info.js">
+</script>
+
+
+
+
+
+<script>
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
+$(window).on('load', async function () {
+    let queryString = window.location.search;
+    console.log(queryString);
+
+    let params = new URLSearchParams(queryString);
+    console.log(params);
+
+    // let address = params.get("address");
+    let address = params.get("entered"); // 4/1/2023 - Could be either address or city, depending on visitor type
+    $(".address-display").html(address);
+    $("#address-storage").attr("value", address);
+    console.log('Here is the address: ' + address);    
+
+    // If we're sending pre-validated info
+    let validated = params.get("validated");
+    console.log('Already validated? ' + validated);
+
+    // STORE THE VISITOR TYPE (buyer vs. seller vs. seller-buyer)
+    let visitorType = params.get("visitor");
+    $("#visitor-type-storage").attr("value", visitorType);
+    console.log('Here is the visitor type: ' + visitorType);
+
+    // STORE THE SESSION ID (if any)
+    let sessionId = params.get("session");
+    $("#session-id-storage").attr("value", sessionId);
+    console.log('Here is the carried sessionId: ' + sessionId);
+
+    // IT'S possible that we should query with the source site name here to ensure safety
+    let destination = params.get("to");
+    console.log('Got destination from queryString "to": ' + destination);
+    if (!destination || typeof destination == "undefined" || destination == "" || destination == "null") {    
+        destination = "6299a06cd8258300049a1a1a"; // our agentId
+        console.log('Did not have a "to" destination, so set to default: ' + destination);
+    }
+    $("#destination-storage").attr("value", destination);
+    $("#agent-id-storage").attr("value", destination);
+
+    // GET THE success page slug (IF ANY)
+    let slug = params.get("slug");
+    console.log('Got slug from query string: ' + slug);
+    $("#slug-storage").attr("value", slug);
+
+    // GET THE GCLID (IF ANY)
+    let gclid = params.get("gclid");
+    $("#gclid-storage").attr("value", gclid);
+
+    if (visitorType == "buyer") {        
+        console.log('Should be showing the buyer form');
+        setBuyerSessionId();
+        $("#buyer-form").show();
+        $('#validating-city-loader').hide();
+
+        let cityEntered = params.get("entered");
+        let cityId = params.get("cityId");
+        let isValidCity = params.get("validCity");
+        let usedClosestCity = params.get("usedClosestCity");
+        let city = params.get("city");
+        let state = params.get("state");       
+                 
+        $('#city-storage').attr("value", city);
+        $('#state-storage').attr("value", state);
+
+        if (!cityId || cityId == "" || isValidCity == "false") {        
+            console.log('Looks like an invalid buyer city');
+            $(".city-display").html(cityEntered); 
+            $("#city-input-storage").attr("value", cityEntered);
+            $("#invalid-city-page").show();
+        } else {
+            console.log('Looks like it was a VALID buyer city...showing process step');
+            $("#buyer-process-step-page").show();
+            $("#city-id-storage").attr("value", cityId);
+        }
+
+    } else {        
+        console.log('Got a seller it seems so proveeding with address validation');
+        $('#validating-address-loader').removeClass('hide');
+        $('#validating-address-loader').css('display', 'flex');
+        initialAddressValidation(address, destination, dummyCallback); // and start session
+        await delay(1500); // slight delay to let user breathe and pull property info?
+        console.log('Should have just shown seller-form');
+        $("#seller-form").show(); // this needs to be here, rather than in the callback
+        $('#validating-address-loader').hide();
+        $('#validating-city-loader').hide();
+    }
+});
+
+function dummyCallback(result) {
+    console.log('dUMMY callback');
+    proceedAfterAddressValidated(result); // NOTE - this function is defined in generic-lead-form.js. It initiates propertyInfo, shows and hides loaders and starts with "selling-home-condition-page".                    
+}
+ 
+</script>
+
+
+<script>
+
+    // 03/29/2023 - ADDED this from validate-city.html
+    document.getElementById("submit-city-correction-btn").addEventListener('click', async (event) => {    
+        event.preventDefault(); // prevent webflow defaults
+        $('#submit-city-correction-btn').val("Going...");
+        $("#city-correct-attempted").attr("value", "true"); 
+        
+        // HIDE THE CURRENT PAGE WHILE THE LOADER SHOWS
+        $('#invalid-city-page').hide(); // can we show this again if they click back?
+
+        // SHOW LOADER
+        $('#validating-city-loader').removeClass('hide');
+        $('#validating-city-loader').css('display', 'flex');    
+
+        let cityCorrection = document.getElementById("city-correction-input").value.trim();
+        $(".city-display").html(cityCorrection); // we want to show, but not necessarily store/send 
+
+        // RE-VALIDATE CITY
+        let validCityId = await getValidCityId(cityCorrection);
+        $("#city-input-storage").attr("value", cityCorrection); 
+        
+        setTimeout(function () { $("#validating-city-loader").hide(); }, 2000);
+        if (!validCityId || validCityId == "") {
+            $('#invalid-city-page').show(); 
+        } else {
+            $("#buyer-process-step-page").show();
+            $("#city-id-storage").attr("value", validCityId);
+        }
+    });
+
+    /* INITIAL BUYER FORM SUBMISSION */
+    document.querySelectorAll('input[name="Buyer-Has-Agent"]').forEach((elem) => {        
+        elem.addEventListener("change", function (event) {
+            event.preventDefault(); // prevent webflow defaults
+    
+            let sessionInfo = getBuyerSessionInfo();
+            console.log('Updating buyer info ... ');
+            console.log(JSON.stringify(sessionInfo, null, 4));
+            updateSession(sessionInfo);
+
+            // SEND GTAG FORM COMPLETION EVENT
+            gtag('event', 'conversion', {
+                'send_to': 'AW-11003696759/V3GFCJ6RnY8YEPes_P4o'
+            });      
+    	    console.log('CONVERSION should have sent');                 
+        });
+    });  
+
+    /* INITIAL SELLER FORM SUBMISSION */
+    document.getElementById("home-features-submit").addEventListener('click', (event) => {
+        let sessionInfo = getSellerSessionInfo();
+        console.log(JSON.stringify(sessionInfo, null, 4));
+        updateSession(sessionInfo);
+
+        // SEND GTAG FORM COMPLETION EVENT
+        gtag('event', 'conversion', {
+          'send_to': 'AW-11003696759/tZAdCPWVjY8YEPes_P4o'
+        });      
+    	console.log('CONVERSION should have sent');              
+    });
+    
+    /* INITIAL SELLER FORM SUBMISSION IF THEY'RE ALSO BUYING */
+    document.getElementById("seller-buying-city-submit").addEventListener('click', (event) => {
+        let sellerBuyingCity = $("#seller-buying-city-input").val();
+        let sessionInfo = getSellerSessionInfo();
+        sessionInfo['Seller-Buying-City'] = sellerBuyingCity;
+        updateSession(sessionInfo);
+    });
+    
+    /* INITIAL BUYER CONTACT SUBMISSION */
+    document.getElementById("buyer-name-submit").addEventListener('click', (event) => {
+        submitVistorName("buyer-name-page", "buyer-name-input");       
+        gtag('event', 'conversion', {
+            'send_to': 'AW-11003696759/ZS_sCKSmnY8YEPes_P4o', // Conversion Buyer submit
+        });    	        
+    });
+    
+    /* FINAL BUYER CONTACT SUBMISSION */
+    document.getElementById("buyer-contact-submit").addEventListener('click', (event) => {
+        submitFinalContacts("buyer-contact-page", "buyer-phone-input", "buyer-email-input");
+        gtag('event', 'conversion', {
+            'send_to': 'AW-11003696759/rmFzCPWapY8YEPes_P4o', // Conversion Buyer submit phone
+        });          
+        routeToSuccess();        
+    });
+    
+    /* INITIAL SELLER CONTACT SUBMISSION */
+    document.getElementById("seller-name-submit").addEventListener('click', (event) => {
+        submitVistorName("seller-name-page", "seller-name-input");
+        gtag('event', 'conversion', {
+            'send_to': 'AW-11003696759/v0ttCPiVjY8YEPes_P4o', // Conversion Seller submit name
+        });          
+    });
+    
+    /* FINAL SELLER CONTACT SUBMISSION */
+    document.getElementById("seller-contact-submit").addEventListener('click', (event) => {
+        submitFinalContacts("seller-contact-page", "seller-phone-input", "seller-email-input");
+        gtag('event', 'conversion', {
+            'send_to': 'AW-11003696759/w4ldCPuVjY8YEPes_P4o', // Conversion Seller submit contacts
+        });           
+        routeToSuccess();
+    });
+</script>
+
+<script>
+    
+/* HANDLE BOUNCE / BACK / EXIT */
+window.onbeforeunload = function () {
+    let finished = $("#finished").val();
+    console.log("finished? " + finished);
+    let warningMessage = null;
+    if (!finished) {
+        console.log('Setting warning');
+        warningMessage = 'Are you sure you want to leave?';
+    }
+    console.log(warningMessage);
+    return warningMessage;
+};
+
+window.onunload = function () {
+    handleBounce();
+};
+
+document.onvisibilitychange = function () {
+    console.log('Visibility change');
+    let mobileDevice = mobileCheck();
+    console.log('Mobile: ' + mobileDevice);
+    if ((mobileDevice) && (document.visibilityState === 'hidden')) {
+        handleBounce();
+    }
+};
+
+</script> 
+
