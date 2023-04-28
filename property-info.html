@@ -1,0 +1,57 @@
+<script>
+    function proceedAfterAddressValidated(result) {
+        console.log('In proceedAfterAddressValidated...');
+        let address = result.addressTextModified;
+
+        // REQUEST PROPERTY INFO FROM BACKEND
+        let agentId = $("#agent-id-storage").val();
+        console.log('Proceeding after ADDRESS VALIDATION with agentId ' + agentId);
+        pullPropertyInfo(address, agentId); // alternatively, we could do this in the address valdation endpoint
+
+        hideAndShowAfterValidation();
+    }
+
+    function hideAndShowAfterValidation() {
+        $("#form-page").show();
+        console.log('Should have just shown form page');
+        $("#relationship-page").show();
+        console.log('Should have just shown relationship-page');
+        $("#zip-code-page").hide();
+        $("#condo-unit-page").hide(); // may have never gotten here
+        $("#confirm-unit-page").hide(); // may have never gotten here
+        $("#enter-different-unit-page").hide(); // may have never gotten here
+        $("#invalid-address-page").hide(); // for good measure(?)    
+    }
+</script>
+
+<script>
+    $(window).on('load', function () {
+        let now = new Date();
+        console.log('LEAD FORM LOAD start @' + now.getSeconds() + "." + now.getMilliseconds() + "\n\n");
+        let queryString = window.location.search;
+        console.log(queryString);
+        let params = new URLSearchParams(queryString);
+        console.log(params);
+    
+        // NOTE that there should be no "address" for buyers (maybe just sellers initially)
+        let address = params.get("address");
+        console.log('Here is the address: ' + address);
+    
+        // UPDATE ADDRESS DISPLAY AND STORAGE FIELDS
+        $(".address-display").html(address);
+        $("#address-storage").attr("value", address); // NOTE - consider removing    
+    
+        // IT'S possible that we should query with the source site name here to ensure safety
+        let agentId = "fgtaJ8fmDtv54zAyJkrfVxM4df"; // JON KUTSMEDA
+        $("#destination-storage").attr("value", agentId);
+        $("#agent-id-storage").attr("value", agentId);
+
+        // SHOW ADDRRESS LOADER
+        $('#validating-address-loader').show();
+        let request = { "address": address, "validateCity": false, "agentId": agentId, "startSession": true };
+        validateAddress(request, proceedAfterAddressValidated); // THIS may be for both seller and seller-buyer, but the logic will eventually deviate based on type
+    
+        // history.replaceState({}, null, "agents"); // UNCOMMENT TO HIDE QUERY STRING
+        setTimeout(function () { $("#market-analysis-loader").hide(); }, 1500); // UNCOMMENT TO SHOW INITIAL LOADER
+    });
+    </script>

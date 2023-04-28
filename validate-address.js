@@ -40,23 +40,6 @@ function storeValidatedAddressComponents(validationResult) {
     $("#city-storage").attr("value", validationResult.city);
     $("#state-storage").attr("value", validationResult.state);
     $("#zip-storage").attr("value", validationResult.zip);
-
-    // ADDED 1/29/2023 - USE CITY ID
-    console.log('SUPPORT CITY CHECK: ' + validationResult.supportedCity);
-    console.log('SUPPORTED CITY ID: ' + validationResult.cityId);
-    if (validationResult.supportedCity && validationResult.cityId) {
-        console.log('IS SUPPORTED!');
-        $("#city-id-storage").attr("value", validationResult.cityId);
-    } else {
-        console.log('NOT SUPPORTED!!!');
-        let closestCityInfo = validationResult.closestSupportedCity;
-        if (closestCityInfo) {
-            console.log('But do have the closest supported city' + closestCityInfo);
-            let closestCityId = closestCityInfo.closestCityId;
-            $("#city-id-storage").attr("value", closestCityId);
-            console.log('Found nearest supported city: ' + closestCityId);
-        }
-    }
 }
 
 function postValidation(func) {
@@ -102,6 +85,7 @@ function validateAddress(request, validationCallback) {
 
         try {
             storeValidatedAddressComponents(result); // NEW 1/4/2022 - this would ALWAYS run, so elements SHOULD be safely overridden
+            $('#validating-address-loader').hide();
             if (!result.invalidAddress) {
                 console.log('Looks like it was a valid address');
                 postValidation(function () { validationCallback(result) });
@@ -112,8 +96,6 @@ function validateAddress(request, validationCallback) {
                 $("#address-storage").attr("value", addressDisplayText);
                 $("#invalid-address-page").hide();
                 $("#zip-code-page").show();
-                $('#validating-location-loader').hide();
-                $('#validating-address-loader').hide();
             } else if ((result.needUnit && !result.unitProvided)) {
                 console.log('We need a unit and it looks like NO unit was provided');
                 let addressDisplayText = result.addressTextModified;
@@ -123,8 +105,6 @@ function validateAddress(request, validationCallback) {
                 $("#zip-code-page").hide();
                 $("#invalid-address-page").hide();
                 $("#condo-unit-page").show();
-                $('#validating-location-loader').hide();
-                $('#validating-address-loader').hide();
             } else if ((result.needUnit && result.invalidUnit)) {
                 console.log('We need a unit and it looks an invalid one was provided');
                 let addressDisplayText = result.addressTextModified;
@@ -143,8 +123,6 @@ function validateAddress(request, validationCallback) {
                     $("#invalid-address-page").hide();
                     $("#condo-unit-page").hide();
                     $("#confirm-unit-page").show();
-                    $('#validating-location-loader').hide();
-                    $('#validating-address-loader').hide();
                 }
             } else {
                 // TODO - NEED some more attention here...
