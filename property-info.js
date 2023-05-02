@@ -20,12 +20,19 @@ function parseValuationResult(result) {
             console.log('Got adjustedEstimate: ' + adjustedEstimate);
 
             // Added 1/3/2023 to create savings estimate
-            let savingsPercent = 0.0035;
+            // let savingsPercent = 0.0035;
+            let savingsPercent = 0.01875;
+            let compSavingsPercent = 0.00625;
             let numericEstValue = Number(estimatedValue.replace(/[^0-9.-]+/g, ""));
             let estimatedSavings = formatter.format(savingsPercent * numericEstValue);
+            let compEstimatedSavings = formatter.format(compSavingsPercent * numericEstValue);
             $(".estimated-savings").html(estimatedSavings);
             $(".estimated-savings").val(estimatedSavings);
             console.log('Got estimated savings: ' + estimatedSavings);
+
+            $(".comp-estimated-savings").html(compEstimatedSavings);
+            $(".comp-estimated-savings").val(compEstimatedSavings);
+            console.log('Got comp estimated savings: ' + compEstimatedSavings);
 
             // NEW - added 4/3/2023 - store the value estimate and savings estimate
             // $("#value-estimate-storage").val(adjustedEstimate);
