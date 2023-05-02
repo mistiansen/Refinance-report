@@ -12,10 +12,10 @@
     }
 
     function hideAndShowAfterValidation() {
-        $("#form-page").show();
-        console.log('Should have just shown form page');
-        $("#relationship-page").show();
-        console.log('Should have just shown relationship-page');
+        // $("#form-page").show(); // 5/2/2023 - NEW DEFAULT IS THIS IS ALREADY SHOWING
+        // console.log('Should have just shown form page');
+        // $("#relationship-page").show(); // 5/2/2023 - NEW DEFAULT IS THIS IS ALREADY SHOWING
+        // console.log('Should have just shown relationship-page');
         $("#zip-code-page").hide();
         $("#condo-unit-page").hide(); // may have never gotten here
         $("#confirm-unit-page").hide(); // may have never gotten here
@@ -54,4 +54,4 @@
         // history.replaceState({}, null, "agents"); // UNCOMMENT TO HIDE QUERY STRING
         setTimeout(function () { $("#market-analysis-loader").hide(); }, 1500); // UNCOMMENT TO SHOW INITIAL LOADER
     });
-    </script>
+</script>
